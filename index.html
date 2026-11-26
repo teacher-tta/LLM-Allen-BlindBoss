@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Auction Panic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3ecdc;--fg:#222;--card:#fffaf0;--acc:#b3261e;--line:#c9bda3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d1b18;--fg:#eee6d6;--card:#2a2723;--acc:#ff8a80;--line:#4a443b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;background-color:var(--bg)}
+.wrap{max-width:1200px;margin:0 auto;padding:0 12px 90px}
+.hd{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bg);padding:6px 0;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:1.4rem}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.brief{background:var(--card);border:2px dashed var(--acc);padding:8px 12px;margin:8px 0;border-radius:6px}
+.timer{font:bold 1.3rem monospace;color:var(--acc)}
+.top{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:start}
+@media(max-width:760px){.top{grid-template-columns:1fr 1fr}.top>.c3{grid-column:1/3}}
+.ref{border:10px solid #c9a227;box-shadow:0 2px 10px #0005;background:#fff;aspect-ratio:4/5;line-height:0}
+.ref svg{width:100%;height:100%}
+.lbl{font-size:.8rem;margin:2px 0;opacity:.85}
+.news{background:#f1ead6;color:#1a1a1a;border:1px solid var(--line);padding:14px;margin-top:14px;box-shadow:0 3px 12px #0004;background-image:repeating-linear-gradient(0deg,transparent 0 3px,#0000000a 3px 4px)}
+.mast{text-align:center;border-bottom:4px double #222;padding-bottom:6px;margin-bottom:10px}
+.mast h2{margin:0;font:900 clamp(1.8rem,6vw,3.6rem) 'Times New Roman',serif;letter-spacing:.04em}
+.mast div{font-size:.8rem;display:flex;justify-content:space-between;border-top:1px solid #222;margin-top:4px;padding-top:3px}
+.paper{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));grid-auto-flow:dense;gap:8px}
+.art{font-size:11px;line-height:1.35;padding:2px;border-right:1px solid #8886}
+.art h4{margin:0 0 3px;font:900 14px/1.1 'Times New Roman',serif}
+.art i{display:block;height:var(--h);background:repeating-linear-gradient(0deg,#3338 0 1px,transparent 1px 7px)}
+.clip{min-height:90px;padding:6px;cursor:pointer;display:flex;align-items:flex-end;font:bold 12px Georgia,serif;border:1px dotted #555;position:relative;overflow:hidden;color:#111}
+.clip:hover{outline:2px solid var(--acc)}
+.clip.cut{opacity:.25;pointer-events:none;border:1px dashed #999;background:#ddd!important}
+.trayb{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--card);border-top:2px solid var(--acc);padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;align-items:center;overflow-x:auto}
+.trayb b{white-space:nowrap}
+.tray{display:flex;gap:6px}
+.tray .clip{width:70px;min-height:46px;flex:none;clip-path:polygon(0 8%,12% 0,40% 6%,70% 0,100% 10%,95% 50%,100% 92%,60% 100%,30% 94%,5% 100%,0 60%)}
+#canvas{position:relative;width:100%;aspect-ratio:4/5;background:#fff;border:10px solid #8a6a2f;box-shadow:inset 0 0 12px #0006;overflow:hidden;touch-action:none;transition:filter .6s}
+#canvas.blur{filter:blur(5px)}
+.piece{position:absolute;width:150px;height:115px;cursor:grab;touch-action:none;display:flex;align-items:flex-end;padding:6px;font:bold 12px Georgia,serif;color:#111;clip-path:polygon(0 8%,12% 0,40% 6%,70% 0,100% 10%,95% 50%,100% 92%,60% 100%,30% 94%,5% 100%,0 60%)}
+button{font:bold 1rem Georgia,serif;background:var(--acc);color:#fff;border:0;padding:10px 16px;border-radius:6px;cursor:pointer;margin:6px 6px 0 0}
+button.alt{background:#666}
+#msg{margin-top:10px;padding:12px;background:var(--card);border-left:5px solid var(--acc);display:none}
+small{opacity:.75}
+</style></head><body><div class="wrap">
+<div class="hd bar"><h1>🎨 Auction Panic</h1><div>Round <b id="rd">1</b>/3 · Score <b id="sc">0</b> · <span class="timer" id="tm">60</span></div></div>
+<div class="brief" id="brief"></div>
+<div class="top">
+<div><div class="lbl"><b>🏛️ The REAL painting</b> <span id="rn"></span></div><div class="ref" id="ref"></div></div>
+<div><div class="lbl"><b>🖼️ Your fake</b> <small>drag · double-click removes</small></div><div id="canvas"></div></div>
+<div class="c3"><button id="go">Hand it to the boss 👓</button><button class="alt" id="skip" style="display:none">Next round</button><div id="msg"></div></div>
+</div>
+<div class="news"><div class="mast"><h2>THE DAILY GAZETTE</h2><div><span>Vol. CXII · No. 40,317</span><span>Thursday, November 26</span><span>Price: 2 coins</span></div></div>
+<div class="paper" id="paper"></div></div>
+</div>
+<div class="trayb"><b>✂️ Scraps<br><small>click to paste</small></b><div class="tray" id="tray"></div></div>
+<script>
+const CL=[
+{id:1,t:'SOFA SALE! 50% off',bg:'#2f5fb0',tags:['blue']},
+{id:2,t:'Weather: Sunny!',bg:'radial-gradient(circle at 50% 50%,#ffe14a 45%,#fff3b0 46%)',tags:['sun','yellow']},
+{id:3,t:'Garden Centre',bg:'#3f9a4a',tags:['green']},
+{id:4,t:'Obituaries',bg:'#2b2b2e',color:'#fff',tags:['dark']},
+{id:5,t:'LOTTO JACKPOT',bg:'#e6b422',tags:['gold','yellow']},
+{id:6,t:'Pizza Night',bg:'linear-gradient(#ff6a2b,#d62f1f)',tags:['red','orange']},
+{id:7,t:'Ocean Race Results',bg:'repeating-linear-gradient(0deg,#1f7fc0 0 8px,#59b2e0 8px 14px)',tags:['sea','blue']},
+{id:8,t:'Tree Surgeons',bg:'linear-gradient(#2d6a35 60%,#5a3a1e 60%)',tags:['tree','green','dark']},
+{id:9,t:'Horoscope: Night',bg:'radial-gradient(#fff 1px,transparent 2px) 0 0/14px 14px,#101a4a',color:'#fff',tags:['night','dark','blue']},
+{id:10,t:'Crossword',bg:'repeating-conic-gradient(#fff 0 25%,#ccc 0 50%) 0 0/16px 16px',tags:['paper']},
+{id:11,t:'Fashion: Pink!',bg:'#f08fb4',tags:['pink']},
+{id:12,t:'Moon Landing Anniv.',bg:'radial-gradient(circle,#f4f1e0 50%,#cfd6ee 52%)',tags:['moon','yellow']},
+{id:13,t:'Beach Holiday Deals',bg:'linear-gradient(#59b2e0 65%,#f2dfa0 65%)',tags:['sea','blue']},
+{id:14,t:'FIRE SALE!',bg:'linear-gradient(#ffb02b,#e0381f 70%,#a01510)',tags:['red','orange']},
+{id:15,t:'Spring Lawn Care',bg:'#58b24f',tags:['green']},
+{id:16,t:'Rose Show Winners',bg:'radial-gradient(circle at 30% 40%,#e0245e 25%,#f6a5c0 26%)',tags:['pink','red']},
+{id:17,t:'Night Owl Radio',bg:'#16204f',color:'#fff',tags:['night','dark','blue']},
+{id:18,t:'Sunrise Yoga',bg:'radial-gradient(circle at 50% 80%,#ffe14a 30%,#ff9a3c 31%,#ffcf6b 70%)',tags:['sun','orange','yellow']},
+{id:19,t:'Oak Tree Tour',bg:'radial-gradient(ellipse at 50% 35%,#2e7a3a 45%,transparent 46%),linear-gradient(90deg,transparent 42%,#4a2f18 42% 58%,transparent 58%),#d9e8c8',tags:['tree','green']},
+{id:20,t:'Full Moon Festival',bg:'radial-gradient(circle at 50% 50%,#fffbe0 28%,#1b2455 30%)',color:'#fff',tags:['moon','night','yellow']},
+{id:21,t:'Cruise Special',bg:'repeating-linear-gradient(0deg,#1368a8 0 10px,#2d8fd0 10px 18px)',color:'#fff',tags:['sea','blue']},
+{id:22,t:'Tomato Soup Coupons',bg:'#d6301f',color:'#fff',tags:['red']},
+{id:23,t:'Flamingo Zoo',bg:'linear-gradient(#f7a8c8,#e8719f)',tags:['pink']},
+{id:24,t:'Lawn Bowls League',bg:'linear-gradient(#4aa84a,#2f7d35)',tags:['green']},
+{id:25,t:'Stock Prices',bg:'repeating-linear-gradient(90deg,#ddd 0 6px,#bbb 6px 8px)',tags:['paper']},
+{id:26,t:'Funeral Directors',bg:'#444',color:'#fff',tags:['dark']}];
+const HL=['Council Delays Bridge Again','Local Man Grows Huge Marrow','Rain Expected By Tuesday','Mayor Cuts Ribbon','Cat Rescued From Tower','Bakery Wins Award','Bus Fares To Rise','Chess Club Reaches Final','New Library Opens','Poll: Tea Beats Coffee'];
+const BR=[
+{n:'"Sunset Over the Sea" — Lot 14',d:'Golden sun up high, sea down low, and some fiery orange/red glow.',req:[['sun','top'],['sea','bottom'],['red','any']],
+svg:'<svg viewBox="0 0 400 500"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a2b"/><stop offset=".55" stop-color="#ffb347"/><stop offset="1" stop-color="#d62f1f"/></linearGradient></defs><rect width="400" height="500" fill="url(#g1)"/><circle cx="200" cy="140" r="58" fill="#ffe14a"/><rect y="280" width="400" height="220" fill="#1f6fb5"/><path d="M0 310h400M0 350h400M0 400h400M0 450h400" stroke="#59b2e0" stroke-width="5" stroke-dasharray="50 22"/></svg>'},
+{n:'"Starry Night" — Lot 7',d:'Deep night sky on top, a bright moon, and a dark tree at the bottom.',req:[['night','top'],['moon','top'],['tree','bottom']],
+svg:'<svg viewBox="0 0 400 500"><rect width="400" height="500" fill="#101a4a"/><g fill="#fff"><circle cx="50" cy="60" r="3"/><circle cx="140" cy="110" r="4"/><circle cx="220" cy="50" r="3"/><circle cx="90" cy="180" r="3"/><circle cx="180" cy="200" r="4"/><circle cx="350" cy="190" r="3"/></g><path d="M0 150Q100 100 200 150T400 130" stroke="#3a5fc0" stroke-width="8" fill="none"/><circle cx="300" cy="90" r="42" fill="#f4f1e0"/><path d="M0 440Q150 380 400 450V500H0Z" fill="#0b1a12"/><rect x="70" y="300" width="22" height="200" fill="#1b1410"/><ellipse cx="80" cy="290" rx="75" ry="95" fill="#12301c"/></svg>'},
+{n:'"Garden Idyll" — Lot 22',d:'Sun in the sky, green garden below, and a little pink flower colour somewhere.',req:[['sun','top'],['green','bottom'],['pink','any']],
+svg:'<svg viewBox="0 0 400 500"><rect width="400" height="500" fill="#8fd0f0"/><circle cx="320" cy="80" r="50" fill="#ffe14a"/><rect y="260" width="400" height="240" fill="#3f9a4a"/><g fill="#f08fb4"><circle cx="70" cy="380" r="22"/><circle cx="170" cy="430" r="26"/><circle cx="290" cy="370" r="22"/><circle cx="340" cy="450" r="24"/></g><g fill="#ffe14a"><circle cx="70" cy="380" r="7"/><circle cx="170" cy="430" r="8"/><circle cx="290" cy="370" r="7"/><circle cx="340" cy="450" r="8"/></g></svg>'}];
+let rd=0,score=0,time=60,iv,placed={},done=false;
+const $=id=>document.getElementById(id);
+const st=c=>`background:${c.bg};color:${c.color||'#111'}`;
+function round(){
+ done=false;placed={};time=60;$('rd').textContent=rd+1;$('tm').textContent=time;
+ const b=BR[rd];$('brief').innerHTML=`<b>Boss texts:</b> "Where's my painting?! Bring ${b.n}. ${b.d} I'm on my way, can't see a thing without my glasses!"`;
+ $('ref').innerHTML=b.svg;$('rn').textContent='— '+b.n;
+ $('paper').innerHTML='';$('tray').innerHTML='';$('canvas').innerHTML='';$('canvas').classList.remove('blur');
+ $('msg').style.display='none';$('go').style.display='';$('skip').style.display='none';
+ const items=[];CL.forEach(c=>items.push({c}));
+ for(let i=0;i<22;i++)items.push({h:HL[i%HL.length],n:3+Math.floor(Math.random()*14)});
+ items.sort(()=>Math.random()-.5);
+ items.forEach(it=>{const e=document.createElement('div');
+  if(it.c){const c=it.c;e.className='clip';e.id='p'+c.id;e.style.cssText=st(c);e.textContent=c.t;e.onclick=()=>cut(c,e)}
+  else{e.className='art';e.innerHTML=`<h4>${it.h}</h4><i style="--h:${it.n*7}px"></i>`}
+  $('paper').appendChild(e)});
+ clearInterval(iv);iv=setInterval(()=>{if(done)return;time--;$('tm').textContent=time;if(time<=0)hand()},1000);
+}
+function cut(c,e){e.classList.add('cut');const s=document.createElement('div');s.className='clip';s.id='t'+c.id;s.style.cssText=st(c);s.textContent=c.t;
+ s.onclick=()=>paste(c,s);$('tray').appendChild(s)}
+function paste(c,s){if(done)return;s.style.display='none';
+ const p=document.createElement('div');p.className='piece';p.style.cssText+=st(c);p.textContent=c.t;p.dataset.tags=c.tags.join(',');
+ const cv=$('canvas');p.style.left=(10+Math.random()*Math.max(0,cv.clientWidth-190))+'px';p.style.top=(10+Math.random()*Math.max(0,cv.clientHeight-155))+'px';
+ let ox,oy;
+ p.onpointerdown=ev=>{if(done)return;p.setPointerCapture(ev.pointerId);const r=p.getBoundingClientRect();ox=ev.clientX-r.left;oy=ev.clientY-r.top;p.style.zIndex=++z;p.style.cursor='grabbing'};
+ p.onpointermove=ev=>{if(!p.hasPointerCapture(ev.pointerId))return;const r=cv.getBoundingClientRect();
+  p.style.left=Math.max(0,Math.min(cv.clientWidth-p.offsetWidth,ev.clientX-r.left-ox-10))+'px';p.style.top=Math.max(0,Math.min(cv.clientHeight-p.offsetHeight,ev.clientY-r.top-oy-10))+'px'};
+ p.onpointerup=()=>p.style.cursor='grab';
+ p.ondblclick=()=>{if(done)return;p.remove();s.style.display=''};
+ cv.appendChild(p)}
+let z=1;
+function hand(){if(done)return;done=true;clearInterval(iv);$('canvas').classList.add('blur');
+ const cv=$('canvas'),h=cv.clientHeight,ps=[...cv.children];let hit=0;
+ const need=BR[rd].req;
+ need.forEach(([tag,zone])=>{if(ps.some(p=>{const tg=p.dataset.tags.split(',');if(!tg.includes(tag))return false;
+   const cy=p.offsetTop+p.offsetHeight/2;return zone==='any'||(zone==='top'?cy<h*.5:cy>=h*.5)}))hit++});
+ const pts=hit*100+(time>0?time:0);score+=pts;$('sc').textContent=score;
+ const L=[ps.length<2?'"Is it… mostly blank? Hm. Modern." The boss squints at the empty frame.':'"Wipes glasses on tie… no, still can\'t see. Moves face 2cm from canvas."',
+ '"I see… colours? Is that a sofa advert?" He is deeply suspicious.',
+ '"Hmm, there\'s something in the corner… yes yes, very Impressionist." He nods slowly.',
+ '"MAGNIFICENT! It\'s exactly what I wanted! Did it cost a lot? ...You\'re getting a raise!"'][hit];
+ $('msg').style.display='block';$('msg').innerHTML=`<b>${hit}/3 elements matched (+${pts} pts)</b><br>${L}`;
+ $('go').style.display='none';$('skip').style.display='';$('skip').textContent=rd<2?'Next round':'See final result'}
+$('go').onclick=hand;
+$('skip').onclick=()=>{if(rd<2){rd++;round()}else{$('canvas').classList.remove('blur');
+ $('msg').innerHTML=`<b>Final score: ${score}</b><br>${score>600?'Promoted to Senior Art Procurement Officer. Nobody ever finds out.':score>300?'You keep your job… until the boss gets new glasses.':'The boss gets new glasses. You get a new job.'}`;
+ $('skip').textContent='Play again';$('skip').onclick=()=>{rd=0;score=0;$('sc').textContent=0;$('skip').onclick=nxt;round()}}};
+const nxt=$('skip').onclick;
+round();
+</script></body></html>
